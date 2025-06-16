@@ -4,9 +4,11 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/express": "^5.0.3",
+    "typescript": "^5.8.3"
   },
-  "peerDependencies": {
-    "typescript": "^5"
+  "dependencies": {
+    "express": "^5.1.0"
   }
 }
