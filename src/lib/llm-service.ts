@@ -4,8 +4,12 @@ export class LLMService {
   private anthropic: Anthropic;
 
   constructor(apiKey?: string) {
+    const key = apiKey || process.env.ANTHROPIC_API_KEY;
+    if (!key) {
+      console.warn('No Anthropic API key provided. LLM features will be disabled.');
+    }
     this.anthropic = new Anthropic({
-      apiKey: apiKey || process.env.ANTHROPIC_API_KEY,
+      apiKey: key || 'dummy-key',
     });
   }
 
@@ -25,6 +29,9 @@ export class LLMService {
       });
 
       const content = response.content[0];
+      if(!content){
+        return null;
+      }
       if (content.type === 'text') {
         return this.extractMoveFromResponse(content.text);
       }
@@ -61,7 +68,7 @@ Move notation:`;
     
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
-        const piece = board[row][col];
+        const piece = board[row]?.[col];
         if (piece) {
           const square = String.fromCharCode(97 + col) + (8 - row);
           pieces.push(`${piece.color} ${piece.type} on ${square}`);
@@ -88,7 +95,7 @@ Move notation:`;
     for (const pattern of movePatterns) {
       const match = trimmed.match(pattern);
       if (match) {
-        return match[1];
+        return match[1] ?? null;
       }
     }
     
