@@ -1,11 +1,11 @@
-import type { Request, Response, RequestHandler } from "express";
+import type { Request, Response } from "express";
 import { ChessGame } from "../lib/chess.js";
 import { LLMService } from "../lib/llm-service.js";
 
 const game = new ChessGame();
 const llmService = new LLMService();
 
-export const getStateController: RequestHandler = (req: Request, res: Response) => {
+export const getStateController = (req: Request, res: Response) => {
   try {
     const gameState = game.getGameState();
     res.json(gameState);
@@ -14,15 +14,16 @@ export const getStateController: RequestHandler = (req: Request, res: Response) 
   }
 }
 
-export const movePieceController: RequestHandler = async (req: Request, res: Response) => {
+export const movePieceController = async (req: Request, res: Response) => {
   try {
     const { move } = req.body;
 
     if (!move || typeof move !== 'string') {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Move is required and must be a string'
       });
+      return;
     }
 
     let moveNotation = move;
@@ -34,10 +35,11 @@ export const movePieceController: RequestHandler = async (req: Request, res: Res
       const convertedMove = await llmService.convertTextToMove(move, game.getGameState());
 
       if (!convertedMove) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Could not understand the move. Try using algebraic notation like "e2e4"'
         });
+        return;
       }
 
       moveNotation = convertedMove;
@@ -73,7 +75,7 @@ export const movePieceController: RequestHandler = async (req: Request, res: Res
   }
 }
 
-export const resetGameController: RequestHandler = (req: Request, res: Response) => {
+export const resetGameController = (req: Request, res: Response) => {
   try {
     game.reset();
     const gameState = game.getGameState();
@@ -86,15 +88,16 @@ export const resetGameController: RequestHandler = (req: Request, res: Response)
   }
 }
 
-export const suggestMoveController: RequestHandler = async (req: Request, res: Response) => {
+export const suggestMoveController = async (req: Request, res: Response) => {
   try {
     const { description } = req.body;
 
     if (!description) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Description is required'
       });
+      return;
     }
 
     const suggestion = await llmService.convertTextToMove(description, game.getGameState());
