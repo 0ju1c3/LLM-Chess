@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .game-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .chess-board {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            gap: 0;
+            border: 2px solid #333;
+            margin: 20px auto;
+            background: #654321;
+        }
+        
+        .square {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .square.light {
+            background-color: #f0d9b5;
+        }
+        
+        .square.dark {
+            background-color: #b58863;
+        }
+        
+        .square.selected {
+            background-color: #ffff00 !important;
+        }
+        
+        .square.valid-move {
+            background-color: #90EE90 !important;
+        }
+        
+        .game-info {
+            margin: 20px 0;
+        }
+        
+        .current-player {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .input-section {
+            margin: 20px 0;
+        }
+        
+        .input-section input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin: 0 10px;
+            width: 200px;
+        }
+        
+        .input-section button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .input-section button:hover {
+            background-color: #45a049;
+        }
+        
+        .move-history {
+            margin-top: 20px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .error-message {
+            color: red;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Chess Game with LLM</h1>
+        
+        <div class="game-info">
+            <div class="current-player" id="currentPlayer">Current Player: White</div>
+        </div>
+        
+        <div class="chess-board" id="chessBoard"></div>
+        
+        <div class="input-section">
+            <input type="text" id="moveInput" placeholder="Enter move (e.g., 'e2e4' or 'move pawn to e4')" />
+            <button onclick="makeMove()">Make Move</button>
+            <button onclick="resetGame()">Reset Game</button>
+        </div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        
+        <div class="move-history">
+            <h3>Move History</h3>
+            <div id="moveHistory"></div>
+        </div>
+    </div>
+
+    <script>
+        let gameState = null;
+        let selectedSquare = null;
+        
+        const pieceSymbols = {
+            'white': {
+                'king': '♔', 'queen': '♕', 'rook': '♖', 
+                'bishop': '♗', 'knight': '♘', 'pawn': '♙'
+            },
+            'black': {
+                'king': '♚', 'queen': '♛', 'rook': '♜', 
+                'bishop': '♝', 'knight': '♞', 'pawn': '♟'
+            }
+        };
+
+        async function initGame() {
+            try {
+                const response = await fetch('/api/game/state');
+                gameState = await response.json();
+                renderBoard();
+                updateGameInfo();
+            } catch (error) {
+                showError('Failed to initialize game');
+            }
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('chessBoard');
+            board.innerHTML = '';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+                    
+                    const piece = gameState.board[row][col];
+                    if (piece) {
+                        square.textContent = pieceSymbols[piece.color][piece.type];
+                    }
+                    
+                    square.addEventListener('click', () => handleSquareClick(row, col));
+                    board.appendChild(square);
+                }
+            }
+        }
+
+        function handleSquareClick(row, col) {
+            const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            
+            if (selectedSquare) {
+                if (selectedSquare.row === row && selectedSquare.col === col) {
+                    // Deselect
+                    clearSelection();
+                    return;
+                }
+                
+                // Try to make move
+                const from = `${String.fromCharCode(97 + selectedSquare.col)}${8 - selectedSquare.row}`;
+                const to = `${String.fromCharCode(97 + col)}${8 - row}`;
+                const move = from + to;
+                
+                makeMoveRequest(move);
+                clearSelection();
+            } else {
+                // Select square if it has a piece of current player
+                const piece = gameState.board[row][col];
+                if (piece && piece.color === gameState.currentPlayer) {
+                    selectedSquare = { row, col };
+                    square.classList.add('selected');
+                }
+            }
+        }
+
+        function clearSelection() {
+            document.querySelectorAll('.square').forEach(sq => {
+                sq.classList.remove('selected', 'valid-move');
+            });
+            selectedSquare = null;
+        }
+
+        async function makeMove() {
+            const input = document.getElementById('moveInput');
+            const moveText = input.value.trim();
+            
+            if (!moveText) {
+                showError('Please enter a move');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/game/move', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ move: moveText })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    gameState = result.gameState;
+                    renderBoard();
+                    updateGameInfo();
+                    input.value = '';
+                    clearError();
+                } else {
+                    showError(result.error || 'Invalid move');
+                }
+            } catch (error) {
+                showError('Failed to make move');
+            }
+        }
+
+        async function makeMoveRequest(move) {
+            try {
+                const response = await fetch('/api/game/move', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ move })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    gameState = result.gameState;
+                    renderBoard();
+                    updateGameInfo();
+                    clearError();
+                } else {
+                    showError(result.error || 'Invalid move');
+                }
+            } catch (error) {
+                showError('Failed to make move');
+            }
+        }
+
+        async function resetGame() {
+            try {
+                const response = await fetch('/api/game/reset', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    gameState = result.gameState;
+                    renderBoard();
+                    updateGameInfo();
+                    clearError();
+                    document.getElementById('moveInput').value = '';
+                }
+            } catch (error) {
+                showError('Failed to reset game');
+            }
+        }
+
+        function updateGameInfo() {
+            document.getElementById('currentPlayer').textContent = 
+                `Current Player: ${gameState.currentPlayer.charAt(0).toUpperCase() + gameState.currentPlayer.slice(1)}`;
+            
+            const moveHistory = document.getElementById('moveHistory');
+            moveHistory.innerHTML = gameState.moveHistory.map((move, index) => 
+                `<div>${index + 1}. ${move}</div>`
+            ).join('');
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        function clearError() {
+            document.getElementById('errorMessage').textContent = '';
+        }
+
+        // Initialize game on page load
+        initGame();
+
+        // Allow Enter key to make move
+        document.getElementById('moveInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                makeMove();
+            }
+        });
+    </script>
+</body>
+</html>
