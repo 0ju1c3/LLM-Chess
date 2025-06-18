@@ -6,7 +6,6 @@ const router = Router();
 const game = new ChessGame();
 const llmService = new LLMService();
 
-// Get current game state
 router.get('/state', (req, res) => {
   try {
     const gameState = game.getGameState();
@@ -16,7 +15,6 @@ router.get('/state', (req, res) => {
   }
 });
 
-// Make a move
 router.post('/move', async (req, res) => {
   try {
     const { move } = req.body;
@@ -30,12 +28,10 @@ router.post('/move', async (req, res) => {
 
     let moveNotation = move;
     
-    // Check if this looks like natural language instead of algebraic notation
     const isNaturalLanguage = await llmService.isValidMoveText(move);
     const isAlgebraicNotation = /^[a-h][1-8][a-h][1-8]$|^[RNBQK]?[a-h]?[1-8]?x?[a-h][1-8]$|^O-O-?O?$/.test(move);
     
     if (isNaturalLanguage && !isAlgebraicNotation) {
-      // Use LLM to convert natural language to move notation
       const convertedMove = await llmService.convertTextToMove(move, game.getGameState());
       
       if (!convertedMove) {
@@ -48,14 +44,11 @@ router.post('/move', async (req, res) => {
       moveNotation = convertedMove;
     }
 
-    // Try to make the move
     let success = false;
     
-    // First try as algebraic notation (e2e4 format)
     if (moveNotation.length === 4 && /^[a-h][1-8][a-h][1-8]$/.test(moveNotation)) {
       success = game.makeAlgebraicMove(moveNotation);
     } else {
-      // Try to parse as standard algebraic notation
       success = game.makeAlgebraicMove(moveNotation);
     }
 
@@ -82,7 +75,6 @@ router.post('/move', async (req, res) => {
   }
 });
 
-// Reset game
 router.post('/reset', (req, res) => {
   try {
     game.reset();
@@ -96,7 +88,6 @@ router.post('/reset', (req, res) => {
   }
 });
 
-// Get move suggestions (optional feature)
 router.post('/suggest', async (req, res) => {
   try {
     const { description } = req.body;

@@ -8,10 +8,8 @@ const PORT = 3000;
 app.use(express.json());
 app.use(express.static("public"));
 
-// Chess game API routes
 app.use("/api/game", chessRoutes);
 
-// Serve the main page
 app.get("/", (_req, res) => {
   res.sendFile(path.join(process.cwd(), "public", "index.html"));
 });

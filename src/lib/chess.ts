@@ -31,13 +31,11 @@ export class ChessGame {
   private initializeBoard(): (ChessPiece | null)[][] {
     const board: (ChessPiece | null)[][] = Array(8).fill(null).map(() => Array(8).fill(null));
     
-    // Place pawns
     for (let col = 0; col < 8; col++) {
       board[1]![col] = { type: 'pawn', color: 'black' };
       board[6]![col] = { type: 'pawn', color: 'white' };
     }
     
-    // Place other pieces
     const pieceOrder: PieceType[] = ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook'];
     
     for (let col = 0; col < 8; col++) {
@@ -80,16 +78,12 @@ export class ChessGame {
       return false;
     }
 
-    // Make the move
     this.board[toRow]![toCol] = piece;
     this.board[fromRow]![fromCol] = null;
     piece.hasMoved = true;
-
-    // Record move in algebraic notation
     const moveNotation = this.formatMove(fromRow, fromCol, toRow, toCol, piece);
     this.moveHistory.push(moveNotation);
 
-    // Switch players
     this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
 
     return true;
@@ -101,7 +95,7 @@ export class ChessGame {
 
     const targetPiece = this.getPieceAt(toRow, toCol);
     if (targetPiece && targetPiece.color === piece.color) {
-      return false; // Can't capture own piece
+      return false; 
     }
 
     const rowDiff = toRow - fromRow;

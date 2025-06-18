@@ -75,16 +75,14 @@ Move notation:`;
   private extractMoveFromResponse(response: string): string | null {
     const trimmed = response.trim();
     
-    // Check for invalid response
     if (trimmed.includes('INVALID') || trimmed.includes('invalid')) {
       return null;
     }
     
-    // Extract move notation patterns
     const movePatterns = [
-      /\b([a-h][1-8][a-h][1-8])\b/,  // e2e4 format
-      /\b([RNBQK]?[a-h]?[1-8]?x?[a-h][1-8])\b/,  // Standard algebraic
-      /\b(O-O-O|O-O)\b/,  // Castling
+      /\b([a-h][1-8][a-h][1-8])\b/,  
+      /\b([RNBQK]?[a-h]?[1-8]?x?[a-h][1-8])\b/, 
+      /\b(O-O-O|O-O)\b/, 
     ];
     
     for (const pattern of movePatterns) {
@@ -94,7 +92,6 @@ Move notation:`;
       }
     }
     
-    // If no pattern matches, try to find any valid-looking move
     const words = trimmed.split(/\s+/);
     for (const word of words) {
       if (/^[a-h][1-8][a-h][1-8]$/.test(word)) {
@@ -109,7 +106,6 @@ Move notation:`;
   }
 
   async isValidMoveText(text: string): Promise<boolean> {
-    // Quick validation to check if text looks like a chess move
     const commonChessWords = [
       'move', 'pawn', 'rook', 'knight', 'bishop', 'queen', 'king',
       'castle', 'capture', 'check', 'checkmate', 'to', 'takes'
@@ -117,12 +113,10 @@ Move notation:`;
     
     const lowerText = text.toLowerCase();
     
-    // Check for algebraic notation
     if (/[a-h][1-8]/.test(text)) {
       return true;
     }
     
-    // Check for chess-related words
     return commonChessWords.some(word => lowerText.includes(word));
   }
 }

@@ -191,12 +191,10 @@
             
             if (selectedSquare) {
                 if (selectedSquare.row === row && selectedSquare.col === col) {
-                    // Deselect
                     clearSelection();
                     return;
                 }
                 
-                // Try to make move
                 const from = `${String.fromCharCode(97 + selectedSquare.col)}${8 - selectedSquare.row}`;
                 const to = `${String.fromCharCode(97 + col)}${8 - row}`;
                 const move = from + to;
@@ -204,7 +202,6 @@
                 makeMoveRequest(move);
                 clearSelection();
             } else {
-                // Select square if it has a piece of current player
                 const piece = gameState.board[row][col];
                 if (piece && piece.color === gameState.currentPlayer) {
                     selectedSquare = { row, col };
@@ -314,10 +311,8 @@
             document.getElementById('errorMessage').textContent = '';
         }
 
-        // Initialize game on page load
         initGame();
 
-        // Allow Enter key to make move
         document.getElementById('moveInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 makeMove();
