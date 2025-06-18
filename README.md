@@ -29,6 +29,10 @@ A web-based chess game that allows two players to play on the same PC, with AI-p
    ```bash
    bun run src/index.ts
    ```
+   or
+   ```bash
+   bun run start
+   ```
 
 4. **Open the game:**
    - Navigate to `http://localhost:3000`
