@@ -18,5 +18,7 @@ app.get("/", (_req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
-  console.log("Set ANTHROPIC_API_KEY environment variable to enable LLM features");
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.log("Set ANTHROPIC_API_KEY environment variable to enable LLM features");
+  }
 });
